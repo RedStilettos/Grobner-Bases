@@ -1,8 +1,13 @@
-CXX=g++
+CXX=g++ 
 CXXFLAGS+=-Wall -Wextra -O2
 
-seq: seq.o
-	$(CXX) $(CXXFLAGS) -o seq.o 
+all: seq
 
-Main.o : main.cpp Polynomial.h
-	$(CXX) $(CXXFLAGS) main.cpp
+seq: main.o polynomial.o
+	$(CXX) $(CXXFLAGS) main.o polynomial.o -o seq
+
+polynomial.o: polynomial.cpp polynomial.h
+	$(CXX) $(CXXFLAGS) -c polynomial.cpp
+
+main.o: main.cpp polynomial.h
+	$(CXX) $(CXXFLAGS) -c main.cpp
