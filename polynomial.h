@@ -54,12 +54,17 @@ int get_num_terms(int *terms, string poly);
  * @brief: parse out the variables being used 
  * 
  * @param vars raw input of varibles, comma separated
+ * @param num_polys number of polynomials 
  * @param num_vars number of unique variables
- * @param poly empty polynomial struct;
+ * @param polys list of pointers to polynomials;
  *
  * @return: 0 on success, 1 on format error
  **/
-int parse_vars(string vars, int num_vars, Polynomial *poly);
+int parse_vars(string vars, int num_polys, int num_vars, Polynomial **poly);
 
 
+int process_term(string input, int curr_term, bool positive, Polynomial *poly);
 
+
+void free_polynomial(Polynomial *poly);
+ 
