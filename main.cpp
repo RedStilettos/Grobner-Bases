@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
 
     cout << "Hello! This program will compute the Grobner Basis ";
     cout << "for a set of polynomials.\n";
-    
+   
     // for ease of later parsing, get the total number of polynomials
     while (true){
         cout << "Please enter the number of polynomials ";
@@ -56,7 +56,8 @@ int main(int argc, char *argv[]){
     // get the exact variables used in the polynomials 
     while (true){
         cout << "Please enter the variables in the polynomials, ";
-        cout << "separated by commas. Ex: x,y,z\n";
+        cout << "separated by commas. They should be in decreasing ";
+        cout << "order as will be used for the monomial orderings. Ex: x,y,z\n";
         getline(cin, buf);
         if (parse_vars(buf, num_polys, num_vars, polys) == 0){
             break;
@@ -81,6 +82,10 @@ int main(int argc, char *argv[]){
 
     printf("print our polynomials to be sure they're right\n"); 
     for (int j = 0; j < num_polys; j++){
+        printf("before : ");
+        to_string(polys[i]);
+        sort_polynomial(polys[j], 3); 
+        printf("\nafter : "); 
         to_string(polys[j]); 
         free_polynomial(polys[j]);
         free(polys);  
