@@ -79,7 +79,9 @@ int main(int argc, char *argv[]){
         }
     }
 
+    printf("print our polynomials to be sure they're right\n"); 
     for (int j = 0; j < num_polys; j++){
+        to_string(polys[j]); 
         free_polynomial(polys[j]);
         free(polys);  
     }

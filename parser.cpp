@@ -27,7 +27,6 @@ int parse_polynomial(string input, Polynomial *poly){
     printf("parsing the term!\n"); 
     // remove white space
     input.erase(remove_if(input.begin(), input.end(), &isWhite), input.end());
-    cout << input;
  
     get_num_terms(&num_terms, input);
     poly->terms = (Term *) malloc(sizeof(Term) * num_terms);  
@@ -75,15 +74,23 @@ int parse_polynomial(string input, Polynomial *poly){
 
 int process_term(string input, int curr_term, bool positive, Polynomial *poly){
     // we'll increment num_terms here and use it to help process the polynomial
-    Term *t = &(poly->terms[curr_term]); 
+    Term *t = &(poly->terms[curr_term]);
+    string num;  
+    size_t j = 0;
     int c;
     int chars_processed = 0;
     char var;
     size_t pos;
+    size_t pos_len;
     t->pow = (int *) malloc(sizeof(int) * poly->num_vars);
+
     //process the coefficient
     if (isdigit(input[0])){
-         c = input[0];
+         while (isdigit(input[j]) && j < input.length()){
+            j++; 
+         }
+         num = input.substr(0, j);
+         c = atoi(num.c_str()); 
     }
     else c = 1;
     if (!positive) c = -1*c; 
@@ -97,8 +104,12 @@ int process_term(string input, int curr_term, bool positive, Polynomial *poly){
         if (pos != string::npos) {
             // check to see if it has an exponent specified 
             if (pos != input.length() && input[pos+1] == '^') {
-                t->pow[i] = input[pos+2];
-                chars_processed += 3;
+                pos_len = 0;
+                while (isdigit(input[pos+2+pos_len]) &&(pos+2+pos_len) < input.length()) {
+                    pos_len++; 
+                }
+                t->pow[i] = atoi(input.substr(pos+2, pos_len).c_str());
+                chars_processed += 2+pos_len;
             }
             else {
                 chars_processed += 1; 

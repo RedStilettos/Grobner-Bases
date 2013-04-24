@@ -39,4 +39,5 @@ struct Polynomial {
  **/
 void free_polynomial(Polynomial *poly);
 
+void to_string(Polynomial *poly); 
 #endif 
