@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "polynomial.h"
+#include "parser.h"
 
 using namespace std;
 
