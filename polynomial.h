@@ -46,15 +46,17 @@ void free_polynomial(Polynomial *poly);
 void to_string(Polynomial *poly); 
 
 void polynomial_quicksort(Term *terms, int num_terms, int num_vars, 
-     int (*comp)(Term *t1, Term *t2, int num_vars));
+     int (*comp)(Term t1, Term t2, int num_vars));
 
 void sort_polynomial(Polynomial *poly, int ordering); 
 
-int sort_lexicographic(Term *t1, Term *t2, int num_vars); 
+int sort_lexicographic(Term t1, Term t2, int num_vars); 
 
-int sort_graded_lexicographic(Term *t1, Term *t2, int num_vars);
+int sort_graded_lexicographic(Term t1, Term t2, int num_vars);
 
-int sort_graded_reverse_lexicographic(Term *t1, Term *t2, int num_vars); 
+int sort_graded_reverse_lexicographic(Term t1, Term t2, int num_vars); 
 
 void swap(Term *t1, Term *t2); 
+
+void print_terms(Term *terms, int num_terms, int num_vars); 
 #endif 
