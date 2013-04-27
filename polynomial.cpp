@@ -37,7 +37,7 @@ void polynomial_quicksort(Term *terms, int num_terms, int num_vars, int (*comp)(
     swap(&terms[pivot_index], &terms[num_terms-1]);
 
     for (int i = 0; i < num_terms; i++) {
-        if (comp(terms[i], pivot, num_vars) == -1) {
+        if (comp(terms[i], pivot, num_vars) == 1) {
             swap(&terms[i], &terms[store]); 
             store += 1;
             print_terms(terms, num_terms, num_vars);  
@@ -61,6 +61,7 @@ void swap(Term *t1, Term *t2) {
 }
 
 
+// compares polynomials term by term, higher power is larger
 int sort_lexicographic(Term t1, Term t2, int num_vars){
     for (int i = 0; i < num_vars; i++){
         if (t1.pow[i] > t2.pow[i]) return 1;
@@ -69,7 +70,7 @@ int sort_lexicographic(Term t1, Term t2, int num_vars){
     return 0; 
 }
 
-
+// compares total powers, then term by term 
 int sort_graded_lexicographic(Term t1, Term t2, int num_vars) {
     int total_1 = 0;
     int total_2 = 0; 
@@ -85,7 +86,7 @@ int sort_graded_lexicographic(Term t1, Term t2, int num_vars) {
     return sort_lexicographic(t1, t2, num_vars); 
 }
 
-
+// compares total powers, then term by term in reverse order 
 int sort_graded_reverse_lexicographic(Term t1, Term t2, int num_vars){
     int total_1 = 0;
     int total_2 = 0; 
@@ -106,8 +107,31 @@ int sort_graded_reverse_lexicographic(Term t1, Term t2, int num_vars){
 }
 
 
+// return a copy of the given polynomial 
+void copy_poly(Polynomial *p){
+    Polynomial *copy = (Polynomial *) malloc(sizeof(Polynomial));
+    // TODO this 
+}
+
+
+// multiply the existing polynomial by a scalar
+void scalar(Polynomial *p, Rational frac){
+    for (int i = 0; i < p->num_terms; i++){
+        Rational r = poly->terms[i].coeff; 
+        r.num = r.num * frac.num;
+        r.den = r.den * frac.den;
+        reduce_frac(&r); 
+        poly->terms[i].coeff.num = r.num;
+        poly->terms[i].coeff.den = r.den; 
+    }    
+}
+
+
+// find the sum of two polynomials, allocating space for a new one
+// finds sum of two polynomials, returns a totally new one  
+// find the sum of two polynomials, stores result in 1st one?? 
 void add(Polynomial *p1, Polynomial *p2) { 
-    return; 
+    return;         
 }
 
 
@@ -160,6 +184,21 @@ void print_terms(Term *terms, int num_terms, int num_vars){
         term_string(&terms[i], num_vars); 
     }
     printf("\n");
+}
+ 
+
+void reduce_frac(Rational *r){
+    int a = r->num;
+    int b = r->den; 
+    int temp = 0;
+
+    while (b != 0) {
+        temp = b;
+        b = a mod temp;
+        a = temp;         
+    }
+    r->num = r->num / a;
+    r->den = r->den / a; 
 }
 
 

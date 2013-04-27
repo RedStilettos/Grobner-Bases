@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
     for (int j = 0; j < num_polys; j++){
         printf("before : ");
         to_string(polys[j]);
-        sort_polynomial(polys[j], 1); 
+        sort_polynomial(polys[j], 3); 
         printf("after : "); 
         to_string(polys[j]); 
         free_polynomial(polys[j]);
