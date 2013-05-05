@@ -80,13 +80,23 @@ int main(int argc, char *argv[]){
         }
     }
 
-    printf("print our polynomials to be sure they're right\n"); 
+    // set ordering 
+    for (int j = 0; j < num_polys; j++) {
+        polys[j]->ordering = 3;
+    }
+
+    printf("computing...\n"); 
+/*    Polynomial *gcd = poly_gcd(polys[0], polys[1]);
+    printf("gcd is \n");
+    to_string(gcd);
+    free(gcd); */ 
+    Polynomial *quot, *rem;
+    divide_polys(polys[0], polys[1], &quot, &rem); 
+    printf("quot is \n");
+    to_string(quot); 
+    printf("rem is\n"); 
+    to_string(rem);
     for (int j = 0; j < num_polys; j++){
-        printf("before : ");
-        to_string(polys[j]);
-        sort_polynomial(polys[j], 3); 
-        printf("after : "); 
-        to_string(polys[j]); 
         free_polynomial(polys[j]);
         free(polys);  
     }
