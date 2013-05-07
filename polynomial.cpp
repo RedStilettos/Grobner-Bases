@@ -113,7 +113,7 @@ int sort_graded_reverse_lexicographic(Term t1, Term t2, int num_vars){
 
 // return a copy of the given polynomial 
 Polynomial *copy_poly(Polynomial *p){
-    Polynomial *copy = empty_poly(p->num_vars, p->num_terms); 
+    Polynomial *copy = empty_poly(p->num_vars, p->num_terms, p->vars); 
     copy->ordering = p->ordering; 
     memcpy(copy->vars, p->vars, sizeof(char) * p->num_vars); 
     for (int i = 0; i < p->num_terms; i++) {
@@ -148,7 +148,7 @@ void double_poly_array(Polynomial **ps, int *count) {
 void double_poly(Polynomial *p) {
     Polynomial *newp;
 
-    newp = empty_poly(p->num_vars, 2*p->num_terms); 
+    newp = empty_poly(p->num_vars, 2*p->num_terms, p->vars); 
     newp->ordering = p->ordering;
     memcpy(newp->vars, p->vars, sizeof(char) * p->num_vars); 
     
@@ -164,13 +164,14 @@ void double_poly(Polynomial *p) {
 
 
 // create empty polynomial of the right dimensions 
-Polynomial *empty_poly(int num_vars, int num_terms) {
+Polynomial *empty_poly(int num_vars, int num_terms, char *vars) {
     Polynomial *p = (Polynomial *) malloc(sizeof(Polynomial)); 
     p->num_vars = num_vars;
     p->num_terms = num_terms;
     p->vars = (char *) malloc(sizeof(char) * num_vars);
     p->terms = (Term *) malloc(sizeof(Term) * num_terms); 
     
+    memcpy(p->vars, vars, sizeof(char) * num_vars); 
     for (int i = 0; i < num_terms; i++) {
         p->terms[i].pow = (int *) malloc(sizeof(int) * num_vars); 
     }
@@ -180,7 +181,7 @@ Polynomial *empty_poly(int num_vars, int num_terms) {
 
 // returns the zero polynomial
 Polynomial *zero_poly(Polynomial *p) {
-    Polynomial *zero = empty_poly(p->num_vars, 1);
+    Polynomial *zero = empty_poly(p->num_vars, 1, p->vars);
     zero->ordering = p->ordering;
     memcpy(zero->vars, p->vars, sizeof(int) * p->num_vars);
     zero->terms[0].coeff.num = 0;
@@ -300,7 +301,7 @@ Polynomial *add_polys(Polynomial *p1, Polynomial *p2) {
     int index; 
 
     // conservatively allocate enough space, then just call reduce 
-    sum = empty_poly(p1->num_vars, p1->num_terms + p2->num_terms); 
+    sum = empty_poly(p1->num_vars, p1->num_terms + p2->num_terms, p1->vars); 
 
     sum->ordering = p1->ordering;
     memcpy(sum->vars, p1->vars, sizeof(char) * p1->num_vars); 
@@ -332,6 +333,29 @@ Polynomial *subtract_polys(Polynomial *p1, Polynomial *p2) {
 }
 
 
+// multiply the polynomial by a particular term 
+Polynomial *term_multiply_poly(Polynomial *p, Term *t) {
+    Polynomial *prod;
+    Term oldt, newt;    
+
+    prod = empty_poly(p->num_vars, p->num_terms, p->vars);
+    memcpy(prod->vars, p->vars, sizeof(char)*p->num_vars);
+    prod->ordering = p->ordering;
+    
+    for (int i = 0; i < p->num_terms; i++){
+        oldt = p->terms[i];
+        newt = prod->terms[i];
+        prod->terms[i].coeff.num = oldt.coeff.num * t->coeff.num;
+        prod->terms[i].coeff.den = oldt.coeff.den * t->coeff.den;
+        reduce_frac(&(t->coeff)); 
+        for (int j = 0; j < p->num_vars; j++){
+            prod->terms[i].pow[j] = t->pow[j] + oldt.pow[j];
+        } 
+    }
+    return prod; 
+}
+
+
 // multiples p1 and p2
 Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
     Polynomial *prod;
@@ -339,7 +363,7 @@ Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
     int index = 0;
 
     //conservatively allocate product space 
-    prod = empty_poly(p1->num_vars, p1->num_terms * p2->num_terms);
+    prod = empty_poly(p1->num_vars, p1->num_terms * p2->num_terms, p1->vars);
     memcpy(prod->vars, p1->vars, sizeof(char)*p1->num_vars);
     prod->ordering = p1->ordering;
 
@@ -360,6 +384,7 @@ Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
     return prod;   
 }
 
+
 // does polynomial long division, p1 divided by p2 
 void divide_polys(Polynomial *p1, Polynomial *p2, 
                          Polynomial **quot, Polynomial **rem) {
@@ -373,13 +398,14 @@ void divide_polys(Polynomial *p1, Polynomial *p2,
     
     // need to allocate some polynomails, let's just assume we need
     // double the space of the dividend and then adjust if it goes over
-    *quot = empty_poly(p1->num_vars, 1);
+    *quot = empty_poly(p1->num_vars, 1, p1->vars);
+    
     divide_terms(&p1->terms[0], &p2->terms[0], &((*quot)->terms[0]), p1->num_vars);
     
     // not divisible from the get go, so the quot is 0
     // and the remainder is all of p1 
     if ((*quot)->terms[0].coeff.num == 0) {
-        *rem = copy_poly(p1);  
+        *rem = copy_poly(p1); 
         return; 
     }
     
@@ -400,7 +426,7 @@ void divide_polys(Polynomial *p1, Polynomial *p2,
         free(old_div);
         
         // see if it can be divided
-        quots[count] = empty_poly(p1->num_vars, 1); 
+        quots[count] = empty_poly(p1->num_vars, 1, p1->vars); 
         divide_terms(&new_div->terms[0], &p2->terms[0], 
                      &quots[count]->terms[0], p1->num_vars);  
         if (quots[count]->terms[0].coeff.num == 0) {
@@ -434,135 +460,163 @@ void divide_polys(Polynomial *p1, Polynomial *p2,
 }
 
 
-// does polynomial long division, p1 divided by p2 
-/* void gcd_divide_polys(Polynomial *p1, Polynomial *p2, 
-                         Polynomial **quot, Polynomial **rem) {
-    int max = 2 * p2->num_terms;
-    int count = 0; 
-    Polynomial *res;
-    Polynomial *old_temp, *new_temp; 
-    Polynomial *old_div, *new_div; 
-    Polynomial **quots; 
-
-    
-    // need to allocate some polynomails, let's just assume we need
-    // double the space of the dividend and then adjust if it goes over
-    *quot = empty_poly(p1->num_vars, 1);
-    gcd_divide_terms(&p1->terms[0], &p2->terms[0], &((*quot)->terms[0]), p1->num_vars);
-    
-    // not divisible from the get go, so the quot is 0
-    // and the remainder is all of p1 
-    if ((*quot)->terms[0].coeff.num == 0) {
-        *rem = copy_poly(p1);  
-        return; 
-    }
-    
-    // the first term was not 0, so we need to set this polynomial in our list of
-    // partial quotients. don't forget to malloc space for the list
-    quots = (Polynomial **) malloc(sizeof(Polynomial *) * max);
-    quots[count] = *quot; 
-    count++; 
-
-    // copy the divisor 
-    old_div = copy_poly(p1); 
-    while(true) {
-        res = multiply_polys(quots[count-1], p2);
-        
-        // get the new dividend
-        new_div = subtract_polys(old_div, res); 
-        sort_polynomial(new_div);  
-        free(old_div);
-        
-        // see if it can be divided
-        quots[count] = empty_poly(p1->num_vars, 1); 
-        gcd_divide_terms(&new_div->terms[0], &p2->terms[0], 
-                     &quots[count]->terms[0], p1->num_vars);  
-        if (quots[count]->terms[0].coeff.num == 0) {
-            res = new_div;
-            break;  
-        }
-       
-        // it divided, time to loop again
-        count += 1;
-        free(res);
-        old_div = new_div;   
-
-        // increase solutions array ?
-        if (count == max-1){
-            double_poly_array(quots, &max); 
-        } 
-    }   
-    // sum everything in the quotes list
-    old_temp = zero_poly(p1); 
-    for (int i = 0; i < count; i++) {
-        new_temp = add_polys(old_temp, quots[i]);
-        free(old_temp);
-        free(quots[i]); 
-        old_temp = new_temp;  
-    }  
-    free(quots); 
+//computes the grobner basis for a given set of polynomials
+Polynomial **grobner_basis(Polynomial **polys, int orig_num_polys, int *basis_size){
+    bool not_grobner = true; 
+    int num_polys = orig_num_polys; 
+    int space, bound;
+    int start_index = 0;  
+    Polynomial **basis;
+    Polynomial *s;
+    Polynomial *reduced;    
  
-    // set the quotient and remainder 
-    *quot = new_temp; 
-    *rem = res; 
-}
-*/
+    // set up the basis; copy over the polynomials given
+    space = 2*orig_num_polys;
+    basis = (Polynomial **) malloc(sizeof(Polynomial *) * space);
+    for (int i = 0; i < num_polys; i++){
+        basis[i] = (Polynomial *) malloc(sizeof(Polynomial)); 
+        basis[i]->num_terms = polys[i]->num_terms;
+        basis[i]->num_vars = polys[i]->num_vars;
+        basis[i]->ordering = polys[i]->ordering;
 
-// finds the GCD of polynomials p1 and p2 
-// TODO what happens if p2 is zero? can this happen?
-/* Polynomial *poly_gcd(Polynomial *p1, Polynomial *p2) {
-    Polynomial *f, *g, *q, *r;    
-    f = copy_poly(p1);
-    g = copy_poly(p2);
-    r = NULL;
-    q = NULL; 
-
-    while(true) {
-        divide_polys(f, g, &q, &r);
-        
-        if (r->terms[0].coeff.num == 0){
-            free(f);
-            free(q);
-            free(r);
-            return g; 
+        basis[i]->vars = (char *) malloc(sizeof(char) * polys[i]->num_vars); 
+        memcpy(basis[i]->vars, polys[i]->vars, sizeof(char) * polys[i]->num_vars);
+         
+        basis[i]->terms = (Term *) malloc(sizeof(Term) * polys[i]->num_terms);
+        for (int j = 0; j < polys[i]->num_terms; j++){
+            basis[i]->terms[j].coeff.num = polys[i]->terms[j].coeff.num;
+            basis[i]->terms[j].coeff.den = polys[i]->terms[j].coeff.den;
+            basis[i]->terms[j].pow = (int *) malloc(sizeof(int) * polys[i]->num_vars);
+            memcpy(basis[i]->terms[j].pow, polys[i]->terms[j].pow, 
+                   sizeof(int) * polys[i]->num_vars); 
         } 
+    } 
+   
+    printf("made it to the whiel loop. poly update\n");
+    for (int i = 0; i < num_polys; i++){
+        to_string(basis[i]); 
+    }  
 
-        // need to loop again
-        free(f);
-        f = g; 
-        g = r;
-        free(q); 
+    // while we do not have a grobner basis, keeping on computing s polynomials
+    while(not_grobner){
+        not_grobner = false;
+        printf("while loop time\n"); 
+        bound = num_polys; // TODO not sure if i actually just want to use num_polys
+        for (int i = 0; i < bound; i++){
+            for (int j = start_index+1; j < bound; j++){
+                s = s_poly(basis[i], basis[j]);
+                printf("found s poly for terms f%d and f%d ", i+1, j+1);
+                to_string(s);  
+                // if you cannot reduce it, add it to the basis
+                if (!can_reduce(s, &reduced, basis, num_polys)) {
+                    printf("try to add to basis\n"); 
+                    if (num_polys == space){
+                        printf("double array!!\n"); 
+                        double_poly_array(basis, &space); 
+                    }
+                    basis[num_polys] = reduced;
+                    free(s); 
+                    num_polys++;
+                    not_grobner = true;  
+                }
+                else {
+                    printf("do not add, just free"); 
+                    free_polynomial(s); 
+                } 
+            }
+        }
+        start_index = bound-1;  
     }
-    // should never get to this return 
-    return g;   
-} */
-
-
-
-/* Polynomial poly_gcd(Polynomial *p1, Polynomial *p2) {
-    Polynomial *g, *quot, *rem;
-    printf("p1 is\n"); to_string(p1);
-    printf("p2 is \n"); to_string(p2); 
-
-    if (p2->terms[0].coeff.num == 0) {
-        return copy_poly(p1); 
-    }
-
-    divide_polys(p1, p2, &quot, &rem);
-    printf("quot and rem\n");
-    to_string(quot);     
-    to_string(rem); 
-    
-    if (!less_than(rem, p1, p1->ordering)) {
-        printf( "wahhhh");
-    }
-
-    free(quot);  
-    g = poly_gcd(p2, rem); 
-    free(rem);
-    return g; 
+    *basis_size = num_polys; 
+    return basis; 
 }
-*/
+
+
+// determine if a particular polynomial can be reduced by the given basis
+bool can_reduce(Polynomial *s, Polynomial **reduced, Polynomial **basis, int num_polys){
+    Polynomial *quot, *rem;
+    bool try_reduce = true;  
+    Polynomial *poly;  
+
+    poly = copy_poly(s); 
+
+    while(try_reduce) {
+        try_reduce = false; 
+        for (int i = 0; i < num_polys; i++){
+            divide_polys(poly, basis[i], &quot, &rem);
+        
+            // remainder is 0, we're done!
+            if (rem->terms[0].coeff.num == 0){
+                free(quot);
+                free(rem); 
+                free(poly); 
+                return true; 
+            }
+
+            // if quot was 0, we could not divide, 
+            if (quot->terms[0].coeff.num == 0){
+                free(quot);
+                free(rem);
+            }
+        
+            // we could divide, so try to reduce it
+            else {
+                printf("tried to reduce. quot was "); 
+                to_string(quot); 
+                free(quot);
+                free(poly);
+                poly = rem; 
+                try_reduce = true;  
+            } 
+        } 
+    }
+
+    printf("end of can_reduce\n");
+    to_string(poly);  
+    *reduced = poly;
+    return false; 
+}
+
+
+// returns the S-polynomial 
+Polynomial *s_poly(Polynomial *p1, Polynomial *p2){
+    Term *t1, *t2, *m1, *m2; 
+    Term *lcm, *f1, *f2;
+
+    Polynomial *new1, *new2, *res;
+
+    t1 = leading_term(p1);
+    t2 = leading_term(p2);
+    m1 = leading_monomial(p1);
+    m2 = leading_monomial(p2); 
+  
+    lcm = term_lcm(m1, m2, p1->num_vars);
+
+    f1 = (Term *) malloc(sizeof(Term));
+    f2 = (Term *) malloc(sizeof(Term));
+    f1->pow = (int *) malloc(sizeof(int) * p1->num_vars); 
+    f2->pow = (int *) malloc(sizeof(int) * p1->num_vars); 
+
+    divide_terms(lcm, t1, f1, p1->num_vars);
+    divide_terms(lcm, t2, f2, p1->num_vars); 
+
+    new1 = term_multiply_poly(p1, f1); 
+    new2 = term_multiply_poly(p2, f2);
+
+    res = subtract_polys(new1, new2);  
+
+    // free all this intermediate stuff
+    free_term(t1); free_term(t2);
+    free_term(m1); free_term(m2);
+    free_term(f1); free_term(f2);
+    free_term(lcm); 
+    free_polynomial(new1); free_polynomial(new2);
+
+    sort_polynomial(res); 
+
+    return res;  
+}
+
 
 // returns true if degree leading term p1 < degree leading term p2
 bool less_than(Polynomial *p1, Polynomial *p2, int ordering) {
@@ -656,6 +710,7 @@ void to_string(Polynomial *poly){
 
 
 void term_string(Term *t, int num_vars){
+    printf("%d/%d", t->coeff.num, t->coeff.den); 
     for (int i = 0; i < num_vars; i++){
         printf(" x^%d ", t->pow[i]); 
     }
@@ -670,12 +725,53 @@ void print_terms(Term *terms, int num_terms, int num_vars){
 }
 
 
-// computes t1 divided by t2
-// dont allow negative exponents  
-void divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
-    int power; 
+// fins the least common multiple of 2 terms 
+Term *term_lcm(Term *a, Term *b, int num_vars){
+    Term *lcm;
+    lcm = (Term *) malloc(sizeof(Term)); 
+    lcm->pow = (int *) malloc(sizeof(int));
+    lcm->coeff.num = 1;
+    lcm->coeff.den = 1; 
 
-    t->pow = (int *) malloc(sizeof(int) * num_vars);
+    for (int i = 0; i < num_vars; i++){
+        if (a->pow[i] > b->pow[i]) lcm->pow[i] = a->pow[i];
+        else lcm->pow[i] = b->pow[i]; 
+    } 
+    return lcm; 
+}
+
+
+//finds the leading term of a Polynomial 
+Term *leading_term(Polynomial *p) {
+    Term *t, *l;
+    t = (Term *) malloc(sizeof(Term)); 
+    t->pow = (int *) malloc(sizeof(int) * p->num_vars);  
+    
+    // sort just to be sure
+    sort_polynomial(p);
+    l = &(p->terms[0]); 
+    t->coeff.num = l->coeff.num;
+    t->coeff.den = l->coeff.den;
+    
+    memcpy(t->pow, l->pow, sizeof(int) * p->num_vars);
+    return t; 
+}
+
+
+// finds the leading monomial of a Polynomial 
+Term *leading_monomial(Polynomial *p) {
+    Term *t;
+    t = leading_term(p);
+    t->coeff.num = 1;
+    t->coeff.den = 1; 
+    return t; 
+}
+
+
+// computes t1 divided by t2, to the nearest whole number coefficient
+// dont allow negative exponents  
+void whole_divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
+    int power; 
 
     t->coeff.num = (t1->coeff.num / t2->coeff.num);
     t->coeff.den = t1->coeff.den * t2->coeff.den; 
@@ -685,33 +781,34 @@ void divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
         // don't allow negative terms  
         if (power < 0) {
             t->coeff.num = 0;
-            return;     
+            return; //TODO should really set all exponents to 0  
         }
         t->pow[i] = power;   
     }
 }
 
 
-/* void gcd_divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
+// computes t1 divided by t2, with fractional coefficients 
+void divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
     int power; 
 
-    t->pow = (int *) malloc(sizeof(int) * num_vars);
-
     t->coeff.num = t1->coeff.num * t2->coeff.den;
-    t->coeff.den = t1->coeff.den * t2->coeff.num;
-    reduce_frac(&t->coeff); 
-    for (int i = 0; i < num_vars; i++) {
+    t->coeff.den = t2->coeff.num * t1->coeff.den;
+    reduce_frac(&(t->coeff));  
+   
+     for (int i = 0; i < num_vars; i++) {
         power = t1->pow[i] - t2->pow[i];
-
-        // don't allow negative terms  
+        // don't allow negative terms; set to 0 and return
         if (power < 0) {
             t->coeff.num = 0;
-            return;     
+            for (int j = 0; j < num_vars; j++){
+                t->pow[j] = 0;
+            }   
+            return; 
         }
         t->pow[i] = power;   
     }
-} */
-
+}
 
 
 bool is_const(Term t, int num_vars){
@@ -743,7 +840,13 @@ void reduce_frac(Rational *r){
         a = temp;         
     }
     r->num = r->num / a;
-    r->den = r->den / a; 
+    r->den = r->den / a;
+
+    //negatives should be in the numerator
+    if (r->den < 0) {
+        r->num *= -1;
+        r->den *= -1; 
+    } 
 }
 
 

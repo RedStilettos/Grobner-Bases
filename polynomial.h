@@ -63,7 +63,7 @@ Polynomial *copy_poly(Polynomial *p);
 void double_poly_array(Polynomial **ps, int *count); 
 void double_poly(Polynomial *p); 
 
-Polynomial *empty_poly(int num_vars, int num_terms); 
+Polynomial *empty_poly(int num_vars, int num_terms, char *vars); 
 Polynomial *zero_poly(Polynomial *p);
 
 void deep_reduce_poly(Polynomial **p); 
@@ -74,16 +74,21 @@ Polynomial *subtract_polys(Polynomial *p1, Polynomial *p2);
 Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2); 
 void divide_polys(Polynomial *p1, Polynomial *p2, 
                          Polynomial **quot, Polynomial **rem); 
-/* void gcd_divide_polys(Polynomial *p1, Polynomial *p2, 
-                         Polynomial **quot, Polynomial **rem); 
-Polynomial *poly_gcd(Polynomial *p1, Polynomial *p2);  */
 void scalar (Polynomial *p, Rational frac); 
+Polynomial *s_poly(Polynomial *p1, Polynomial *p2); 
+bool can_reduce(Polynomial *s, Polynomial **reduced, Polynomial **basis, int num_polys);
+Polynomial **grobner_basis(Polynomial **polys, int num_polys, int *basis_size); 
 
-void divide_terms(Term *t1, Term *t2, Term *t, int num_vars); 
-// void gcd_divide_terms(Term *t1, Term *t2, Term *t, int num_vars); 
+void divide_terms(Term *t1, Term *t2, Term *t, int num_vars);
+void whole_divide_terms(Term *t1, Term *t2, Term *t, int num_vars);  
+Term *leading_term(Polynomial *p);
+Term *leading_monomial(Polynomial *p);
+Term *term_lcm(Term *a, Term *b, int num_vars);  
 bool is_const(Term t, int num_vars); 
 bool less_than(Polynomial *p1, Polynomial *p2, int ordering); 
 void term_string(Term *t, int num_vars); 
+
+
 Rational add_frac(Rational r1, Rational r2); 
 void reduce_frac(Rational *r); 
 void free_term(Term *t); 
