@@ -82,41 +82,48 @@ int main(int argc, char *argv[]){
 
     // set ordering 
     for (int j = 0; j < num_polys; j++) {
-        polys[j]->ordering =1;
+        polys[j]->ordering =2;
         sort_polynomial(polys[j]); 
     }
 
     printf("computing...\n"); 
     bool red;
-    int basis_size; 
-    Polynomial **basis;  
+    int basis_size = num_polys; 
+    int reduced_size; 
+    Polynomial **basis, **reduced;  
     Polynomial *quot, *rem, *s;
     /*divide_polys(polys[0], polys[1], &quot, &rem); 
     printf("quot is \n");
     to_string(quot); 
     printf("rem is\n"); 
-    to_string(rem);*/
-    //s = s_poly(polys[0], polys[1]); 
-    //printf("s poly is\n");
-    //to_string(s);
-    //free(quot);
-    //free(rem);
+    to_string(rem);
+    free(quot);
+    free(rem); */
+    /*s = s_poly(polys[0], polys[1]); 
+    printf("s poly is\n");
+    to_string(s);
+    free(s);*/
     //red = can_reduce(s, polys,2);
     //if (red) printf("yes we can reduce!!!\n");
     //else printf("FUCK NO SON\n"); 
-
-    basis = grobner_basis(polys, num_polys, &basis_size); 
-    //free(s); 
+    basis = grobner_basis(polys, 2, &basis_size); 
+    reduced = reduce_basis(basis, basis_size, &reduced_size);
     printf("lets print the basis\n");  
     for (int j = 0; j < num_polys; j++){
         free_polynomial(polys[j]);
-        free(polys);  
     }
+    free(polys);
     for (int j = 0; j < basis_size; j++){
         to_string(basis[j]); 
         free_polynomial(basis[j]);
-        free(basis); 
     }
+    free(basis);
+    printf("REDUCED BASIS\n"); 
+    for (int j = 0; j < reduced_size; j++){
+        to_string(reduced[j]);
+        free_polynomial(reduced[j]);
+    }
+    free(reduced); 
     return 0;   
 }
 

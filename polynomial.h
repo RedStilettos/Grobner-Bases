@@ -60,7 +60,8 @@ int sort_graded_reverse_lexicographic(Term t1, Term t2, int num_vars);
 void swap(Term *t1, Term *t2); 
 
 Polynomial *copy_poly(Polynomial *p);
-void double_poly_array(Polynomial **ps, int *count); 
+Polynomial **copy_poly_array(Polynomial **ps, int count); 
+Polynomial **double_poly_array(Polynomial **ps, int *count); 
 void double_poly(Polynomial *p); 
 
 Polynomial *empty_poly(int num_vars, int num_terms, char *vars); 
@@ -77,7 +78,10 @@ void divide_polys(Polynomial *p1, Polynomial *p2,
 void scalar (Polynomial *p, Rational frac); 
 Polynomial *s_poly(Polynomial *p1, Polynomial *p2); 
 bool can_reduce(Polynomial *s, Polynomial **reduced, Polynomial **basis, int num_polys);
-Polynomial **grobner_basis(Polynomial **polys, int num_polys, int *basis_size); 
+Polynomial **reduce_basis(Polynomial **set, int num_polys, int *basis_size); 
+Polynomial *normal_form(Polynomial **set, Polynomial *orig,
+                        int index, int num_polys, int *reduce); 
+Polynomial **grobner_basis(Polynomial **basis, int num_polys, int *basis_size); 
 
 void divide_terms(Term *t1, Term *t2, Term *t, int num_vars);
 void whole_divide_terms(Term *t1, Term *t2, Term *t, int num_vars);  
