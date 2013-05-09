@@ -5,9 +5,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <omp.h>
+#include <time.h> 
 
 #include "polynomial.h"
 
+void do_stuff(){
+    int count = 0;
+    for (int i = 0; i < 100*100; i++){
+        count += i;
+    }
+}
+
+void par_test(){
+    clock_t start, end;
+    printf("par test\n");
+    start = clock();
+    #pragma omp parallel for schedule(dynamic)  
+    for (int i = 0; i < 10000; i++){
+        do_stuff();
+    } 
+    end = clock(); 
+    printf("done in %.4fs\n", ((float)(end-start))/CLOCKS_PER_SEC); 
+}
 
 void sort_polynomial(Polynomial *poly) {
     int (*comparator) (Term t1, Term t2, int num_vars);

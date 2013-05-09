@@ -97,4 +97,5 @@ Rational add_frac(Rational r1, Rational r2);
 void reduce_frac(Rational *r); 
 void free_term(Term *t); 
 void print_terms(Term *terms, int num_terms, int num_vars); 
+void par_test(); 
 #endif 
