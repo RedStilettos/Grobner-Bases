@@ -112,12 +112,11 @@ int main(int argc, char *argv[]){
         //res = subtract_polys(polys[1],polys[0]);
         start = time(&start);
         gettimeofday(&s, NULL); 
-        res = add_all_polys(polys, num_polys, true); 
+        res = add_polys(polys[0], polys[1]); 
         end = time(&end); 
         gettimeofday(&e, NULL);  
         //to_string(res);
         printf("took %f seconnds\n", difftime(end, start));  
-        printf("also took %f sec\n", (e.tv_sec-s.tv_sec)*1000000 + e.tv_usec-s.tv_usec); 
         free_polynomial(res);  
         printf("back from operation\n");     
         //to_string(res); 

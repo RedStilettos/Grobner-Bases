@@ -26,7 +26,7 @@ void do_pointless(Polynomial **ps, int num_polys){
     start = clock();
     #pragma omp parallel for schedule(static, 1) 
     for (int i = 0; i < num_polys; i++){
-        deep_reduce_poly(&ps[i]); 
+        printf("you suck\n"); 
     }
     end = clock(); 
     print_time(start, end); 
@@ -243,6 +243,7 @@ Polynomial *zero_poly(Polynomial *p) {
 // combines terms, gets ried of any 0 terms
 // actually recreates the polynomial with accurate space
 void deep_reduce_poly(Polynomial **orig) {
+    printf("deep reduce time\n"); 
     int orig_num; 
     Polynomial *newp; 
     Polynomial *p = *orig;
@@ -345,39 +346,6 @@ void reduce_poly(Polynomial *p) {
     p->num_terms = index;
 }
 
-Polynomial *add_all_polys_old(Polynomial **polys, int num_polys, bool doit){
-    Polynomial *res; 
-    if (num_polys == 1){
-        res = copy_poly(polys[0]);
-    }
-
-    else if (num_polys == 2){
-        res = add_polys(polys[0], polys[1]); 
-    }
-
-    else{
-        Polynomial *p1, *p2;
-        #pragma omp parallel sections
-        {        
-            #pragma omp section
-            {
-                printf("hi from thread %d\n", omp_get_thread_num()); 
-                p1 = add_all_polys(polys, num_polys/2, false);
-            }
-            #pragma omp section
-            {
-                printf("hi from thread %d\n", omp_get_thread_num()); 
-                p2 = add_all_polys(&(polys[num_polys/2]), num_polys - (num_polys/2), false);
-            }
-        }
-        #pragma omp barrier
-        res = add_polys(p1, p2); 
-        free_polynomial(p1);
-        free_polynomial(p2);  
-    }
-    return res; 
-}
-
 
 // adds a list of polynomials
 Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit){
@@ -438,13 +406,13 @@ Polynomial *add_polys(Polynomial *p1, Polynomial *p2) {
     memcpy(sum->vars, p1->vars, sizeof(char) * p1->num_vars); 
  
     // copy over p1 and p2
-    // SLOW #pragma omp parallel for schedule(static, 1)  
+    #pragma omp parallel for schedule(static, 1)  
     for (int i = 0; i < p1->num_terms; i++) {
         sum->terms[i].coeff.num = p1->terms[i].coeff.num;
         sum->terms[i].coeff.den = p1->terms[i].coeff.den;
         memcpy(sum->terms[i].pow, p1->terms[i].pow, sizeof(int)*p1->num_vars); 
     }
-    // SLOW #pragma omp parallel for schedule(static, (p2->num_terms+6)/6)
+    #pragma omp parallel for schedule(static, (p2->num_terms+6)/6)
     for (int i = 0; i < p2->num_terms; i++){
         index = i + p1->num_terms; 
         sum->terms[index].coeff.num = p2->terms[i].coeff.num;
@@ -496,16 +464,14 @@ Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
     Polynomial *prod;
     Term t1, t2; 
     int index = 0;
-    clock_t start, end; 
 
-    start = clock(); 
     //conservatively allocate product space 
     prod = empty_poly(p1->num_vars, p1->num_terms * p2->num_terms, p1->vars);
     memcpy(prod->vars, p1->vars, sizeof(char)*p1->num_vars);
     prod->ordering = p1->ordering;
 
     // runs in O(n^2) time...could probably be better 
-    //#pragma omp parallel for schedule(dynamic) 
+    //#pragma omp parallel for schedule(static, 1) 
     for (int i = 0; i < p1->num_terms; i++){
         t1 = p1->terms[i];         
         for (int j = 0; j < p2->num_terms; j++){
@@ -517,12 +483,11 @@ Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
                 prod->terms[index].pow[k] = t1.pow[k] + t2.pow[k];
             }
         }
-        //printf("term done %d\n", i); 
+        printf("term done %d\n", i); 
     }
+    //#pragma omp barrier 
     //printf("IM DONE WITH THE LOOP\n"); 
     deep_reduce_poly(&prod); 
-    end = clock(); 
-    //printf("done in %.6fs\n", ((float)(end-start))/CLOCKS_PER_SEC); 
     return prod;   
 }
 
