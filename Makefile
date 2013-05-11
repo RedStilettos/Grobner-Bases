@@ -1,5 +1,5 @@
 CXX=g++ 
-CXXFLAGS+=-Wall -Wextra -fopenmp
+CXXFLAGS+=-Wall -Wextra -g -fopenmp
 
 all: seq par
 

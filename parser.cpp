@@ -24,7 +24,6 @@ int parse_polynomial(string input, Polynomial *poly){
     bool inpoly = false; 
     bool positive = true; 
 
-    printf("parsing the term!\n"); 
     // remove white space
     input.erase(remove_if(input.begin(), input.end(), &isWhite), input.end());
  

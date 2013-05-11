@@ -1,5 +1,6 @@
 // Ashley Kumar
 // 2013
+// OMP_NUM_THREADS=12
 
 #include <cstdlib>
 #include <iostream>
@@ -9,6 +10,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
+#include <sys/time.h> 
 
 #include "polynomial.h"
 #include "parser.h"
@@ -19,20 +22,20 @@ int main(int argc, char *argv[]){
     int num_polys = 0;
     int num_vars = 0;  
     int i = 0, count=0, ordering=0;
-    int c, version = 0, line_count=0;
+    int c, line_count=0;
     bool show_help = false; 
+    time_t start, end;  
+    timeval s, e;  
     ifstream infile;  
-    Polynomial **polys;  
+    Polynomial **polys, **basis, **reduced;  
     string buf = "";
     string input;  
+    Polynomial *res; 
+    int size=0, red_size = 0;  
 
     // parse out command line options 
     while((c = getopt(argc, argv, ":v:f:h")) != EOF) {
         switch(c) {
-            case 'v':
-                if (optarg[0] == 's') version = 1;
-                else version = 2;
-                break;
             case 'f':
                 infile.open(optarg);
                 break;
@@ -48,11 +51,6 @@ int main(int argc, char *argv[]){
     if (show_help) {
         printf("should probably say something helpful here\n");
         return 0;  
-    }
-
-    if (!version) {
-        printf("Please specify a version. -v seq or -v par\n"); 
-        return 0; 
     }
 
     // read from a file, if one is open; 
@@ -103,14 +101,44 @@ int main(int argc, char *argv[]){
             }
         }
         infile.close();  
-
+        for(int i = 0; i < num_polys; i++){
+            sort_polynomial(polys[i]); 
+            //to_string(polys[i]); 
+        }
         printf("we have %d polynomials in %d variables\n", num_polys, num_vars); 
+        //do_pointless(polys, num_polys);
+        //basis = grobner_basis(polys, num_polys, &size);  
+        //reduced = reduce_basis(basis, size, &red_size); 
+        //res = subtract_polys(polys[1],polys[0]);
+        start = time(&start);
+        gettimeofday(&s, NULL); 
+        res = add_all_polys(polys, num_polys, true); 
+        end = time(&end); 
+        gettimeofday(&e, NULL);  
+        //to_string(res);
+        printf("took %f seconnds\n", difftime(end, start));  
+        printf("also took %f sec\n", (e.tv_sec-s.tv_sec)*1000000 + e.tv_usec-s.tv_usec); 
+        free_polynomial(res);  
+        printf("back from operation\n");     
+        //to_string(res); 
+        //free_polynomial(res); 
         for (int i = 0; i < num_polys; i++){
-            to_string(polys[i]);
             free_polynomial(polys[i]);
         }
         free(polys);
-        par_test(); 
+       /* printf("basis is:\n"); 
+        for (int i = 0; i < size; i++){
+           to_string(basis[i]); 
+           free_polynomial(basis[i]);
+        }
+        free(basis);
+        printf("reduced basis\n");  
+        for (int i = 0; i < red_size; i++){
+            to_string(reduced[i]);
+            free_polynomial(reduced[i]); 
+        }   
+        free(reduced);*/
+        //par_test(); 
     } 
 
     else{
@@ -176,7 +204,7 @@ int main(int argc, char *argv[]){
 
         // set ordering 
         for (int j = 0; j < num_polys; j++) {
-            polys[j]->ordering =2;
+            polys[j]->ordering =1;
             sort_polynomial(polys[j]); 
         }
 
@@ -213,7 +241,7 @@ int main(int argc, char *argv[]){
             to_string(reduced[j]);
             free_polynomial(reduced[j]);
         }
-        free(reduced); 
+        free(reduced);
     }
 
     return 0;   

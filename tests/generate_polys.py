@@ -61,5 +61,13 @@ def print_to_file(output, filename):
     f.write(output)
     f.close()
 
+test(10*1000, 1, 1000, 1200, 10, 10, ['x','y','z'], "addmany1.txt")
 #test(5, 1, 5, 7, 10, 10, ['x', 'y', 'z'], "test1.txt")
-test(2,1,10*1000,11*1000, 1000, 10*1000, ['a','b','c','d','e'], "add1.txt"); 
+#test(3, 3, 3, 4, 4, 10, ['x', 'y', 'z'], "grobverysmall.txt")
+#test(5, 3, 4, 5, 4, 20, ['x', 'y', 'z'], "grobsmall.txt")
+#test(10, 3, 12, 14, 5, 20, ['a','b','c','d','e'], "grobmed.txt") 
+#test(1000,1,3*1000,4*1000, 10, 100, ['a','b','c','d','e'], "reducesmall.txt"); 
+#test(1000,1,10*1000,11*1000, 10, 100, ['a','b','c','d','e'], "reduce.txt"); 
+#test(2,1,5,10, 100, 100, ['a','b','c','d','e'], "addsmall.txt"); 
+#test(2,1,1000,1005, 100, 100, ['a','b','c','d','e'], "addmed.txt"); 
+#test(2,1,100*1000,110*1000, 1000, 10*1000, ['a','b','c','d','e'], "addlarge.txt"); 

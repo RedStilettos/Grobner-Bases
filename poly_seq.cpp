@@ -10,12 +10,28 @@
 
 #include "polynomial.h"
 
+void print_time(clock_t start, clock_t end){
+    printf("done in %.4fs\n", ((float)(end-start))/CLOCKS_PER_SEC); 
+}
+
 void do_stuff(){
     int count = 0;
     for (int i = 0; i < 1000*100; i++){
         count += i;
     }
 }
+
+
+void do_pointless(Polynomial **ps, int num_polys){
+    clock_t start, end;
+    start = clock(); 
+    for (int i = 0; i < num_polys; i++){
+        deep_reduce_poly(&ps[i]);
+    }
+    end = clock(); 
+    print_time(start, end); 
+}
+
 
 void par_test(){
     clock_t start, end;
@@ -608,7 +624,6 @@ Polynomial *normal_form(Polynomial **set, Polynomial *orig,
 
 // reduces the entire set of polynomials, using normal_form to help
 Polynomial **reduce_basis(Polynomial **set, int num_polys, int *basis_size){
-    bool try_reduce = true; 
     int reduced = 0;
     Polynomial *temp;
     Polynomial **basis;

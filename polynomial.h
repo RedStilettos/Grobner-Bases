@@ -69,7 +69,7 @@ Polynomial *zero_poly(Polynomial *p);
 
 void deep_reduce_poly(Polynomial **p); 
 void reduce_poly(Polynomial *p);
- 
+Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit);  
 Polynomial *add_polys(Polynomial *p1, Polynomial *p2);
 Polynomial *subtract_polys(Polynomial *p1, Polynomial *p2); 
 Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2); 
@@ -98,4 +98,6 @@ void reduce_frac(Rational *r);
 void free_term(Term *t); 
 void print_terms(Term *terms, int num_terms, int num_vars); 
 void par_test(); 
+void print_time(clock_t s, clock_t e);
+void do_pointless(Polynomial **ps, int num_polys); 
 #endif 
