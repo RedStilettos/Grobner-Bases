@@ -7,6 +7,7 @@
 #include <string.h>
 #include <omp.h>
 #include <time.h> 
+#include <limits.h>
 
 #include "polynomial.h"
 
@@ -21,22 +22,22 @@ void do_stuff(){
     }
 }
 
-void do_pointless(Polynomial **ps, int num_polys){
+/*void do_pointless(Polynomial **ps, int num_polys){
     clock_t start, end;
     start = clock();
-    #pragma omp parallel for schedule(static, 1) 
+    //#pragma omp parallel for schedule(static, 1) 
     for (int i = 0; i < num_polys; i++){
         printf("you suck\n"); 
     }
     end = clock(); 
     print_time(start, end); 
-}
+}*/
 
 void par_test(){
     clock_t start, end;
     printf("par test\n");
     start = clock();
-    #pragma omp parallel for schedule(dynamic)  
+    //#pragma omp parallel for schedule(dynamic)  
     for (int i = 0; i < 10000; i++){
         do_stuff();
     } 
@@ -176,7 +177,6 @@ Polynomial **copy_poly_array(Polynomial **ps, int count){
 Polynomial **double_poly_array(Polynomial **ps, int *count) {
     Polynomial **newps; 
     int old_count; 
-
     old_count = *count; 
     *count = 2 * old_count;
 
@@ -243,7 +243,7 @@ Polynomial *zero_poly(Polynomial *p) {
 // combines terms, gets ried of any 0 terms
 // actually recreates the polynomial with accurate space
 void deep_reduce_poly(Polynomial **orig) {
-    printf("deep reduce time\n"); 
+    //printf("deep reduce time\n"); 
     int orig_num; 
     Polynomial *newp; 
     Polynomial *p = *orig;
@@ -261,15 +261,19 @@ void deep_reduce_poly(Polynomial **orig) {
     newp->num_terms = p->num_terms;
     newp->ordering = p->ordering;     
     newp->terms = (Term *) malloc(sizeof(Term) * p->num_terms);
-   
-    for (int i = 0; i < p->num_terms; i++) {
+    memcpy(newp->terms, p->terms, sizeof(Term) * p->num_terms); 
+    /*for (int i = 0; i < p->num_terms; i++) {
         newp->terms[i].coeff.num = p->terms[i].coeff.num;
         newp->terms[i].coeff.den = p->terms[i].coeff.den;
         newp->terms[i].pow = (int *) malloc(sizeof(int) * p->num_vars);
         memcpy(newp->terms[i].pow, p->terms[i].pow, sizeof(int) * p->num_vars);  
-    }
+    }*/
     p->num_terms = orig_num;  
-    free_polynomial(p);
+    //free_polynomial(p);
+    // can't use free polynomial because power arrays are reused
+    free(p->terms);
+    free(p->vars);
+    free(p); 
     *orig = newp;
 }
 
@@ -352,7 +356,8 @@ Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit){
     Polynomial *old, *res;
     int threads = omp_get_max_threads();  
     int chunk = num_polys / threads;
-    int start, end;
+    int start;
+
     //printf("threads %d\n", threads);  
     if (threads == 1 || num_polys < threads){
         res = zero_poly(polys[0]); 
@@ -366,10 +371,9 @@ Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit){
     else{
         Polynomial ** ps; 
         ps = (Polynomial **) malloc(sizeof(Polynomial *) * threads); 
-        #pragma omp parallel for schedule(static, 1) 
+        //#pragma omp parallel for schedule(static, 1) 
         for (int i = 0; i < threads; i++){
             start = i * chunk;
-            end = (i+1) * chunk;
             if (i == threads-1){
                 ps[i] = add_all_polys(&(polys[i]), num_polys-start, doit); 
             }
@@ -377,7 +381,7 @@ Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit){
                 ps[i] = add_all_polys(&(polys[i]), chunk, doit); 
             }
         }    
-        #pragma omp barrier
+        //#pragma omp barrier
         res = copy_poly(ps[0]); 
         free_polynomial(ps[0]); 
         for (int i = 1; i < threads; i++){
@@ -396,8 +400,6 @@ Polynomial *add_all_polys(Polynomial **polys, int num_polys, bool doit){
 Polynomial *add_polys(Polynomial *p1, Polynomial *p2) {  
     Polynomial *sum; 
     int index;
-    clock_t start, end;
-    start = clock();   
 
     // conservatively allocate enough space, then just call reduce 
     sum = empty_poly(p1->num_vars, p1->num_terms + p2->num_terms, p1->vars); 
@@ -406,13 +408,13 @@ Polynomial *add_polys(Polynomial *p1, Polynomial *p2) {
     memcpy(sum->vars, p1->vars, sizeof(char) * p1->num_vars); 
  
     // copy over p1 and p2
-    #pragma omp parallel for schedule(static, 1)  
+    //#pragma omp parallel for schedule(static, 1)  
     for (int i = 0; i < p1->num_terms; i++) {
         sum->terms[i].coeff.num = p1->terms[i].coeff.num;
         sum->terms[i].coeff.den = p1->terms[i].coeff.den;
         memcpy(sum->terms[i].pow, p1->terms[i].pow, sizeof(int)*p1->num_vars); 
     }
-    #pragma omp parallel for schedule(static, (p2->num_terms+6)/6)
+    //#pragma omp parallel for schedule(static, (p2->num_terms+6)/6)
     for (int i = 0; i < p2->num_terms; i++){
         index = i + p1->num_terms; 
         sum->terms[index].coeff.num = p2->terms[i].coeff.num;
@@ -420,8 +422,6 @@ Polynomial *add_polys(Polynomial *p1, Polynomial *p2) {
         memcpy(sum->terms[index].pow, p2->terms[i].pow, sizeof(int)*p2->num_vars);
     }
     deep_reduce_poly(&sum);
-    end = clock(); 
-    //printf("done in %.6fs\n", ((float)(end-start))/CLOCKS_PER_SEC); 
     return sum;  
 }
 
@@ -483,7 +483,7 @@ Polynomial *multiply_polys(Polynomial *p1, Polynomial *p2) {
                 prod->terms[index].pow[k] = t1.pow[k] + t2.pow[k];
             }
         }
-        printf("term done %d\n", i); 
+        //printf("term done %d\n", i); 
     }
     //#pragma omp barrier 
     //printf("IM DONE WITH THE LOOP\n"); 
@@ -501,7 +501,6 @@ void divide_polys(Polynomial *p1, Polynomial *p2,
     Polynomial *old_temp, *new_temp; 
     Polynomial *old_div, *new_div; 
     Polynomial **quots; 
-
     
     // need to allocate some polynomails, let's just assume we need
     // double the space of the dividend and then adjust if it goes over
@@ -591,17 +590,20 @@ Polynomial **grobner_basis(Polynomial **orig_basis, int num_polys, int *basis_si
                 if (i == j) continue; // dont check poly with itself
                 printf("found s poly for terms f%d and f%d ", i+1, j+1); fflush(stdout);
                 s = s_poly(basis[i], basis[j]);
-                to_string(s);
-        
+                reduce_coeffs(s); 
+                to_string(s); printf("\n"); 
+ 
                 // try to reduce it with normal form
                 reduced = normal_form(basis, s, *basis_size, *basis_size, &try_reduce);
-                //printf("reduced is\n");
-                //to_string(reduced); 
-                free(s); 
+                reduce_coeffs(reduced);
+                printf("reduced is ");
+                to_string(reduced); printf("\n"); 
+                free_polynomial(s); 
 
                 // check to see how var it was reduced  
                 if (reduced->terms[0].coeff.num != 0){
                     if (*basis_size == space) {
+                        printf("grobner double"); 
                         basis = double_poly_array(basis, &space); 
                     }
                     basis[*basis_size] = reduced;
@@ -609,7 +611,7 @@ Polynomial **grobner_basis(Polynomial **orig_basis, int num_polys, int *basis_si
                     not_grobner = true;  
                 }
                 else {
-                    free(reduced); 
+                    free_polynomial(reduced); 
                 }
             }
         }
@@ -624,12 +626,13 @@ Polynomial **grobner_basis(Polynomial **orig_basis, int num_polys, int *basis_si
 Polynomial *normal_form(Polynomial **set, Polynomial *orig, 
                         int index, int num_polys, int *reduced){
     Polynomial *res, *temp; 
+    bool found=false; 
 
     // we must try all quotient and remainders
     Polynomial **quots = (Polynomial **) malloc(sizeof(Polynomial *) * num_polys);
     Polynomial **rems = (Polynomial **) malloc(sizeof(Polynomial *) * num_polys);
-    printf("reducing... ");
-    to_string(orig); 
+    //printf("reducing... ");
+    //to_string(orig); 
     res = copy_poly(orig);
     *reduced = 0;
   
@@ -639,16 +642,47 @@ Polynomial *normal_form(Polynomial **set, Polynomial *orig,
         if (i == index) continue;
         divide_polys(orig, set[i], &(quots[i]), &(rems[i]));
     }
-
     //printf("wtf tried to divide everything\n"); 
     // nothing divided out completely the first time
     // keep trying to divide out stuff recursively
+
+    // check for 0 remainders
     for (int i = 0; i < num_polys; i++){
+        if (i == index) continue; 
+        if (rems[i]->terms[0].coeff.num == 0){
+            free_polynomial(res);
+            res = copy_poly(rems[i]);
+            found = true; 
+            break; 
+        }
+    }
+
+    if (!found){
+        for (int i = 0; i < num_polys; i++){
+            //divide recursively
+            if (i == index) continue; 
+            if(quots[i]->terms[0].coeff.num != 0){
+                printf("recurse!!\n");
+                to_string(quots[i]); 
+                temp = normal_form(set, rems[i], index, num_polys, reduced); 
+                free(res);
+                if (temp->terms[0].coeff.num == 0){
+                    res = copy_poly(temp);
+                    break;     
+                }
+                else{
+                    res = copy_poly(rems[i]);
+                }
+                free_polynomial(temp); 
+            }
+        }
+    }
+    /*for (int i = 0; i < num_polys; i++){
         if (i == index) continue;
         
         // remainder is 0, return this right away
         if (rems[i]->terms[0].coeff.num == 0){
-            free(res);  
+            free_polynomial(res);  
             res = copy_poly(rems[i]);
             break;
         }
@@ -665,20 +699,20 @@ Polynomial *normal_form(Polynomial **set, Polynomial *orig,
             else{
                 res = copy_poly(rems[i]); 
             }
-            free(temp); 
+            free_polynomial(temp); 
         }
-    }
+    }*/
 
     // free all this stuff
     for (int i = 0; i < num_polys; i++) {
         if (i == index) continue; 
-        free(quots[i]);
-        free(rems[i]); 
+        free_polynomial(quots[i]);
+        free_polynomial(rems[i]); 
     }
 
     free(quots);
     free(rems); 
-    printf("end of normal"); 
+    //printf("end of normal"); 
     return res; 
 }
 
@@ -917,30 +951,9 @@ Term *leading_monomial(Polynomial *p) {
 }
 
 
-// computes t1 divided by t2, to the nearest whole number coefficient
-// dont allow negative exponents  
-void whole_divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
-    int power; 
-
-    t->coeff.num = (t1->coeff.num / t2->coeff.num);
-    t->coeff.den = t1->coeff.den * t2->coeff.den; 
-    for (int i = 0; i < num_vars; i++) {
-        power = t1->pow[i] - t2->pow[i];
-
-        // don't allow negative terms  
-        if (power < 0) {
-            t->coeff.num = 0;
-            return; //TODO should really set all exponents to 0  
-        }
-        t->pow[i] = power;   
-    }
-}
-
-
 // computes t1 divided by t2, with fractional coefficients 
 void divide_terms(Term *t1, Term *t2, Term *t, int num_vars) {
     int power; 
-
     t->coeff.num = t1->coeff.num * t2->coeff.den;
     t->coeff.den = t2->coeff.num * t1->coeff.den;
     reduce_frac(&(t->coeff));  
@@ -976,11 +989,23 @@ Rational add_frac(Rational r1, Rational r2) {
 } 
 
 
+void reduce_coeffs(Polynomial *p){
+    for (int i = 0; i < p->num_terms; i++){
+        reduce_frac(&(p->terms[0].coeff)); 
+    }
+}
+
 void reduce_frac(Rational *r){
     int a = r->num;
     int b = r->den; 
     int temp = 0;
-   
+
+    //  TODO JUST A HACK TO VOID CRASHES 
+    if (r->num == INT_MIN){
+        r->num = 1;
+        r->den = 1;
+    }
+  
     if (a == 0) return;
   
     while (b != 0) {

@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <time.h>
-#include <sys/time.h> 
 
 #include "polynomial.h"
 #include "parser.h"
@@ -25,14 +24,18 @@ int main(int argc, char *argv[]){
     int c, line_count=0;
     bool show_help = false; 
     time_t start, end;  
-    timeval s, e;  
     ifstream infile;  
     Polynomial **polys, **basis, **reduced;  
     string buf = "";
     string input;  
     Polynomial *res; 
     int size=0, red_size = 0;  
-
+    /*Rational r;
+    r.num = 1000188;
+    r.den = 500;
+    reduce_frac(&r);
+    printf("whatt %d %d \n", r.num, r.den); 
+    return 1;*/
     // parse out command line options 
     while((c = getopt(argc, argv, ":v:f:h")) != EOF) {
         switch(c) {
@@ -103,21 +106,20 @@ int main(int argc, char *argv[]){
         infile.close();  
         for(int i = 0; i < num_polys; i++){
             sort_polynomial(polys[i]); 
-            //to_string(polys[i]); 
+            to_string(polys[i]); 
         }
         printf("we have %d polynomials in %d variables\n", num_polys, num_vars); 
         //do_pointless(polys, num_polys);
         //basis = grobner_basis(polys, num_polys, &size);  
         //reduced = reduce_basis(basis, size, &red_size); 
-        //res = subtract_polys(polys[1],polys[0]);
         start = time(&start);
-        gettimeofday(&s, NULL); 
-        res = add_polys(polys[0], polys[1]); 
+        //res = multiply_polys(polys[0], polys[1]); 
+        basis = grobner_basis(polys, num_polys, &size);  
+        //reduced = reduce_basis(basis, size, &red_size); 
         end = time(&end); 
-        gettimeofday(&e, NULL);  
         //to_string(res);
         printf("took %f seconnds\n", difftime(end, start));  
-        free_polynomial(res);  
+        //free_polynomial(res);  
         printf("back from operation\n");     
         //to_string(res); 
         //free_polynomial(res); 
@@ -125,13 +127,13 @@ int main(int argc, char *argv[]){
             free_polynomial(polys[i]);
         }
         free(polys);
-       /* printf("basis is:\n"); 
+        printf("basis is:\n"); 
         for (int i = 0; i < size; i++){
            to_string(basis[i]); 
            free_polynomial(basis[i]);
         }
         free(basis);
-        printf("reduced basis\n");  
+        /*printf("reduced basis\n");  
         for (int i = 0; i < red_size; i++){
             to_string(reduced[i]);
             free_polynomial(reduced[i]); 
