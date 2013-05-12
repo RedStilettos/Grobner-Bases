@@ -14,8 +14,8 @@ using namespace std;
 
 // Fraction struct to represent rational coefficients 
 struct Rational {
-    int num;
-    int den; 
+    long num;
+    long den; 
 }; 
 
 
@@ -43,7 +43,7 @@ struct Polynomial {
  * @return nothing
  **/
 void free_polynomial(Polynomial *poly);
-
+void free_poly_array(Polynomial **ps, int num_polys); 
 void to_string(Polynomial *poly); 
 
 void polynomial_quicksort(Term *terms, int num_terms, int num_vars, 
@@ -80,7 +80,7 @@ Polynomial *s_poly(Polynomial *p1, Polynomial *p2);
 bool can_reduce(Polynomial *s, Polynomial **reduced, Polynomial **basis, int num_polys);
 Polynomial **reduce_basis(Polynomial **set, int num_polys, int *basis_size); 
 Polynomial *normal_form(Polynomial **set, Polynomial *orig,
-                        int index, int num_polys, int *reduce); 
+                        int index, int num_polys, int reduce); 
 Polynomial **grobner_basis(Polynomial **basis, int num_polys, int *basis_size); 
 
 void divide_terms(Term *t1, Term *t2, Term *t, int num_vars);
