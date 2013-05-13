@@ -105,42 +105,37 @@ int main(int argc, char *argv[]){
         }
         infile.close();  
         for(int i = 0; i < num_polys; i++){
-            sort_polynomial(polys[i]); 
-            //to_string(polys[i]); 
+            deep_reduce_poly(&polys[i]);
+            //sort_polynomial(polys[i]); 
+            to_string(polys[i]); 
         }
-        deep_reduce_poly(&polys[0]);
-        deep_reduce_poly(&polys[1]);
         printf("we have %d polynomials in %d variables\n", num_polys, num_vars); 
-        printf("terms 1 %d and terms 2 %d\n", polys[0]->num_terms, polys[1]->num_terms); 
-        //do_pointless(polys, num_polys);
-        //basis = grobner_basis(polys, num_polys, &size);  
-        //reduced = reduce_basis(basis, size, &red_size); 
         start = time(&start);
-        res = add_polys(polys[0], polys[1]); 
-        //basis = grobner_basis(polys, num_polys, &size);  
-        //reduced = reduce_basis(basis, size, &red_size); 
+        //res = add_all_polys(polys, num_polys, true);  
+        basis = grobner_basis(polys, num_polys, &size);  
         end = time(&end); 
+        reduced = reduce_basis(basis, size, &red_size); 
         //to_string(res);
         printf("took %f seconnds\n", difftime(end, start));  
         printf("back from operation\n");     
         //to_string(res); 
-        free_polynomial(res); 
+        //free_polynomial(res); 
         for (int i = 0; i < num_polys; i++){
             free_polynomial(polys[i]);
         }
         free(polys);
-        /*printf("basis is:\n"); 
+        printf("basis is:\n"); 
         for (int i = 0; i < size; i++){
-           to_string(basis[i]); 
+           //to_string(basis[i]); 
            free_polynomial(basis[i]);
         }
         free(basis);
         printf("reduced basis\n");  
         for (int i = 0; i < red_size; i++){
-            to_string(reduced[i]);
+            //to_string(reduced[i]);
             free_polynomial(reduced[i]); 
         }   
-        free(reduced);*/
+        free(reduced);
         //par_test(); 
     } 
 
@@ -226,15 +221,22 @@ int main(int argc, char *argv[]){
         printf("s poly is\n");
         to_string(s);
         free(s);*/
-        basis = grobner_basis(polys, 2, &basis_size); 
-        reduced = reduce_basis(basis, basis_size, &reduced_size);
+        deep_reduce_poly(&polys[0]);
+        deep_reduce_poly(&polys[1]); 
+        printf("adding..\n");
+        to_string(polys[0]);
+        to_string(polys[1]); 
+        res = add_polys(polys[0], polys[1]);
+        to_string(res); 
+        //basis = grobner_basis(polys, 2, &basis_size); 
+        //reduced = reduce_basis(basis, basis_size, &reduced_size);
         printf("lets print the basis\n");  
         for (int j = 0; j < num_polys; j++){
             free_polynomial(polys[j]);
         }
         free(polys); 
         
-        for (int j = 0; j < basis_size; j++){
+        /*for (int j = 0; j < basis_size; j++){
             to_string(basis[j]); 
             free_polynomial(basis[j]);
         }
@@ -244,7 +246,7 @@ int main(int argc, char *argv[]){
             to_string(reduced[j]);
             free_polynomial(reduced[j]);
         }
-        free(reduced);
+        free(reduced);*/
     }
 
     return 0;   
